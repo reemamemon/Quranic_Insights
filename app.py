@@ -14,7 +14,7 @@ def clear_memory():
     torch.cuda.empty_cache()
 
 # Path to the CSV file
-CSV_FILE_PATH = 'The Quran Dataset.csv'
+CSV_FILE_PATH = 'The_Quran_Dataset.csv'
 
 # Streamlit app
 st.title("Quran Ayah Search and Response Generation")

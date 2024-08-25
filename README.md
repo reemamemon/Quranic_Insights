@@ -17,17 +17,6 @@ Before running the app, ensure that you have the following Python packages insta
 pip install -r requirements.txt
 ```
 
-### Requirements.txt
-```plaintext
-streamlit==1.26.0
-pandas==2.0.3
-faiss-cpu==1.7.4
-numpy==1.24.3
-sentence-transformers==2.2.2
-transformers==4.33.2
-torch==2.0.1
-```
-
 ## Usage
 
 ### 1. Dataset

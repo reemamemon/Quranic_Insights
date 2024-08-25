@@ -7,17 +7,29 @@ from sentence_transformers import SentenceTransformer
 from transformers import AutoModelForCausalLM, AutoTokenizer
 import torch
 import gc
-import requests
 
 # Function to clear memory
 def clear_memory():
     gc.collect()
     torch.cuda.empty_cache()
 
-# Load the dataset directly from GitHub
+# Load a small sample from the CSV file to check its contents
 csv_url = 'https://raw.githubusercontent.com/reemamemon/Quranic_Insights/main/The_Quran_Dataset.csv'
+try:
+    sample_data = pd.read_csv(csv_url, nrows=5)
+    st.write("Sample of the data loaded successfully:", sample_data)
+except pd.errors.EmptyDataError:
+    st.error("Error: The CSV file appears to be empty or has no columns.")
+    st.stop()
+
+# Load the dataset from the CSV file in chunks
 chunk_size = 1000  # Adjust based on your RAM constraints
 df_iterator = pd.read_csv(csv_url, chunksize=chunk_size)
+
+# Proceed with the rest of your code if the data is valid
+if not df_iterator:
+    st.error("Error: Unable to load data from the file.")
+    st.stop()
 
 # Load a smaller model for generating embeddings
 embedder = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
@@ -28,10 +40,11 @@ index = faiss.IndexFlatL2(dimension)
 
 # Process data in chunks
 for chunk in df_iterator:
-    vectors = embedder.encode(chunk['ayah_en'].tolist(), convert_to_numpy=True, show_progress_bar=False)
-    vectors = vectors.astype(np.float32)
-    index.add(vectors)
-    clear_memory()
+    if not chunk.empty:
+        vectors = embedder.encode(chunk['ayah_en'].tolist(), convert_to_numpy=True, show_progress_bar=False)
+        vectors = vectors.astype(np.float32)
+        index.add(vectors)
+        clear_memory()
 
 # Load the Granite model and tokenizer for generating the final response
 device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -96,4 +109,3 @@ if input_text:
 
 # Clear memory one last time
 clear_memory()
-

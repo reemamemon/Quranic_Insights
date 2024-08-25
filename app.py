@@ -13,7 +13,7 @@ def clear_memory():
     torch.cuda.empty_cache()
 
 # Streamlit app
-st.title("📖 Quran Ayah Search and AI Response Generation")
+st.title("📖 Quranic Knowledge AI Chatbot")
 
 st.write("""
 This app allows you to search for the most relevant Quranic Ayahs based on your query and generates an AI-based response. 
@@ -27,7 +27,7 @@ csv_file_url = "https://github.com/reemamemon/Quranic_Insights/blob/main/The_Qur
 input_text = st.text_input("🔍 Enter your query:", value="Who is Adam A.s?")
 
 # Add a button to trigger the search and response generation
-if st.button("🚀 Search Ayahs & Generate Response"):
+if st.button("🚀 Generate Response"):
     # Proceed if query is provided
     if input_text:
         # Inform user that the process has started

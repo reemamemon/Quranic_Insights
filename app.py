@@ -21,7 +21,7 @@ Enter your query, and let the model find the most relevant verses for you.
 """)
 
 # Direct URL to the CSV file on GitHub
-csv_file_url = "https://raw.githubusercontent.com/reemamemon/Quranic_Insights/main/The%20Quran%20Dataset.csv"
+csv_file_url = "https://github.com/reemamemon/Quranic_Insights/blob/main/The_Quran_Dataset.csv"
 
 # Input for user query
 input_text = st.text_input("🔍 Enter your query:", value="Who is Adam A.s?")

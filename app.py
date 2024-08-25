@@ -16,7 +16,7 @@ def clear_memory():
 st.title("Quran Ayah Search and Response Generation")
 
 # File uploader for CSV
-csv_file = '/content/The Quran Dataset.csv'
+csv_file = 'The Quran Dataset.csv'
 
 # Input for user query
 input_text = st.text_input("Enter your query:", value="what is the order about the believer?")

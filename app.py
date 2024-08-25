@@ -24,7 +24,7 @@ Enter your query, and let the model find the most relevant verses for you.
 csv_file_url = "https://raw.githubusercontent.com/reemamemon/Quranic_Insights/main/The%20Quran%20Dataset.csv"
 
 # Input for user query
-input_text = st.text_input("🔍 Enter your query:", value="What is the order about the believer?")
+input_text = st.text_input("🔍 Enter your query:", value="Who is Adam A.s?")
 
 # Add a button to trigger the search and response generation
 if st.button("🚀 Search Ayahs & Generate Response"):
@@ -85,8 +85,9 @@ if st.button("🚀 Search Ayahs & Generate Response"):
         st.subheader("🔎 Retrieved Ayahs")
         for i, ayah in enumerate(retrieved_ayahs, 1):
             st.write(f"### Ayah {i}:")
-            for column, value in ayah.items():
-                st.write(f"**{column}:** {value}")
+            st.write(f"**Arabic Reference:** {ayah['ayah_ar']}")
+            st.write(f"**Translation and Explanation:** {ayah['ayah_en']}")
+            st.write(f"**Para:** {ayah['para']}, **Surah:** {ayah['surah']}, **Ayah:** {ayah['ayah_no']}")
 
         # Prepare the text for the language model
         retrieved_texts = "\n".join([ayah['ayah_en'] for ayah in retrieved_ayahs])

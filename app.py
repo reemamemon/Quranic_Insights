@@ -17,26 +17,25 @@ st.title("📖 Quran Ayah Search and AI Response Generation")
 
 st.write("""
 This app allows you to search for the most relevant Quranic Ayahs based on your query and generates an AI-based response. 
-Upload the dataset, enter your query, and let the model find the most relevant verses for you.
+Enter your query, and let the model find the most relevant verses for you.
 """)
 
-# File uploader for CSV
-csv_file = st.file_uploader("📁 Upload the Quran Dataset CSV", type=["csv"])
+# Direct URL to the CSV file on GitHub
+csv_file_url = "https://raw.githubusercontent.com/reemamemon/Quranic_Insights/main/The%20Quran%20Dataset.csv"
 
 # Input for user query
 input_text = st.text_input("🔍 Enter your query:", value="What is the order about the believer?")
 
 # Add a button to trigger the search and response generation
 if st.button("🚀 Search Ayahs & Generate Response"):
-    # Proceed if file is uploaded and query is provided
-    if csv_file is not None and input_text:
-
+    # Proceed if query is provided
+    if input_text:
         # Inform user that the process has started
         st.write("Processing your request...")
 
-        # Load the dataset in chunks
+        # Load the dataset in chunks from the GitHub URL
         chunk_size = 1000  # Adjust based on your RAM constraints
-        df_iterator = pd.read_csv(csv_file, chunksize=chunk_size)
+        df_iterator = pd.read_csv(csv_file_url, chunksize=chunk_size)
 
         # Load a smaller model for generating embeddings
         embedder = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
@@ -76,7 +75,7 @@ if st.button("🚀 Search Ayahs & Generate Response"):
         # Gather the retrieved Ayahs with all columns
         retrieved_ayahs = []
         for idx in indices[0]:
-            for chunk in pd.read_csv(csv_file, chunksize=chunk_size):
+            for chunk in pd.read_csv(csv_file_url, chunksize=chunk_size):
                 if idx < len(chunk):
                     retrieved_ayahs.append(chunk.iloc[idx])
                     break
@@ -115,4 +114,4 @@ if st.button("🚀 Search Ayahs & Generate Response"):
         clear_memory()
 
     else:
-        st.error("Please upload the dataset and enter a query.")
+        st.error("Please enter a query.")

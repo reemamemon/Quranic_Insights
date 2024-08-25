@@ -6,6 +6,8 @@ from sentence_transformers import SentenceTransformer
 from transformers import AutoModelForCausalLM, AutoTokenizer
 import torch
 import gc
+import requests
+from io import StringIO
 
 # Function to clear memory
 def clear_memory():
@@ -15,8 +17,8 @@ def clear_memory():
 # Streamlit app
 st.title("Quran Ayah Search and Response Generation")
 
-# File uploader for CSV
-csv_file = st.file_uploader("Upload the Quran Dataset CSV", type=["csv"])
+# URL of the dataset on GitHub
+dataset_url = "https://raw.githubusercontent.com/reemamemon/Quranic_Insights/main/The_Quran_Dataset.csv"
 
 # Input for user query
 input_text = st.text_input("Enter your query:", value="what is the order about the believer?")
@@ -24,12 +26,15 @@ input_text = st.text_input("Enter your query:", value="what is the order about t
 # Define a placeholder for the generated response
 generated_text_placeholder = st.empty()
 
-# Proceed if file is uploaded and query is provided
-if csv_file is not None and input_text:
+# Proceed if query is provided
+if input_text:
 
-    # Load the dataset in chunks
-    chunk_size = 1000  # Adjust based on your RAM constraints
-    df_iterator = pd.read_csv(csv_file, chunksize=chunk_size)
+    # Download the dataset from GitHub
+    response = requests.get(dataset_url)
+    response.raise_for_status()  # Ensure we notice bad responses
+
+    # Load the dataset into a DataFrame
+    df = pd.read_csv(StringIO(response.text))
 
     # Load a smaller model for generating embeddings
     embedder = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
@@ -38,19 +43,17 @@ if csv_file is not None and input_text:
     dimension = 384  # Dimension of all-MiniLM-L6-v2 embeddings
     index = faiss.IndexFlatL2(dimension)
 
-    # Process data in chunks
-    for chunk in df_iterator:
-        # Encode the 'ayah_en' column into vectors using the smaller model
-        vectors = embedder.encode(chunk['ayah_en'].tolist(), convert_to_numpy=True, show_progress_bar=False)
+    # Encode the 'ayah_en' column into vectors using the smaller model
+    vectors = embedder.encode(df['ayah_en'].tolist(), convert_to_numpy=True, show_progress_bar=False)
+    
+    # Convert to float32 to save memory
+    vectors = vectors.astype(np.float32)
 
-        # Convert to float32 to save memory
-        vectors = vectors.astype(np.float32)
+    # Add vectors to the index
+    index.add(vectors)
 
-        # Add vectors to the index
-        index.add(vectors)
-
-        # Clear memory
-        clear_memory()
+    # Clear memory
+    clear_memory()
 
     # Load the Granite model and tokenizer for generating the final response
     device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -66,24 +69,18 @@ if csv_file is not None and input_text:
     k = 5  # Number of nearest neighbors to retrieve
     distances, indices = index.search(input_vector.astype(np.float32), k)
 
-    # Gather the retrieved Ayahs with all columns
-    retrieved_ayahs = []
-    for idx in indices[0]:
-        for chunk in pd.read_csv(csv_file, chunksize=chunk_size):
-            if idx < len(chunk):
-                retrieved_ayahs.append(chunk.iloc[idx])
-                break
-            idx -= len(chunk)
+    # Gather the retrieved Ayahs
+    retrieved_ayahs = df.iloc[indices[0]]
 
     # Display the results with all columns
     st.write("Retrieved Ayahs:")
-    for i, ayah in enumerate(retrieved_ayahs, 1):
+    for i, ayah in retrieved_ayahs.iterrows():
         st.write(f"\nAyah {i}:")
         for column, value in ayah.items():
             st.write(f"{column}: {value}")
 
     # Prepare the text for the language model
-    retrieved_texts = "\n".join([ayah['ayah_en'] for ayah in retrieved_ayahs])
+    retrieved_texts = "\n".join(retrieved_ayahs['ayah_en'])
 
     # Generate the final response using the Granite model
     input_tokens = tokenizer(retrieved_texts, return_tensors="pt", truncation=True, max_length=512)

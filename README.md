@@ -1,13 +1,13 @@
 
-# Quran Ayah Search and Response Generation
+# Quranic Knowledge AI Chatbot
 
-This Streamlit app allows users to search for specific Ayahs from the Quran based on a query and generate a relevant response using an AI model. The app utilizes FAISS for efficient similarity search and SentenceTransformers for embedding generation, along with a large language model (Granite) to generate the final response.
+This is a Quranic Knowledge Chatbot designed to provide answers directly from the Quran in Arabic, followed by translations and explanations in the same language as the user's input. The chatbot also provides detailed references, including Para, Surah, and Ayah numbers, for each answer. The model is specifically designed to answer queries related to the Quran.
 
 ## Features
 
-- **Ayah Search**: Upload a CSV dataset containing Quranic Ayahs, and search for relevant Ayahs based on your query.
-- **Response Generation**: After retrieving the relevant Ayahs, the app generates a coherent response using the Granite language model.
-- **Efficient Processing**: The app handles large datasets by processing them in chunks and using FAISS for fast vector-based similarity search.
+- **Quranic Verses in Arabic:** Provides the relevant Quranic verse in Arabic for each query.
+- **Language-Specific Explanations:** Delivers explanations and translations in the user's input language.
+- **Detailed References:** Includes Para, Surah, and Ayah numbers for each Quranic reference.
 
 ## Requirements
 

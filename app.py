@@ -1,3 +1,4 @@
+from accelerate import Accelerator
 import streamlit as st
 import pandas as pd
 import faiss
@@ -6,17 +7,17 @@ from sentence_transformers import SentenceTransformer
 from transformers import AutoModelForCausalLM, AutoTokenizer
 import torch
 import gc
-from accelerate import Accelerator
+import requests
 
 # Function to clear memory
 def clear_memory():
     gc.collect()
     torch.cuda.empty_cache()
 
-# Load the dataset in chunks
-csv_file = 'The_Quran_Dataset.csv'  # Adjust the file path as needed
+# Load the dataset directly from GitHub
+csv_url = 'https://raw.githubusercontent.com/reemamemon/Quranic_Insights/main/The_Quran_Dataset.csv'
 chunk_size = 1000  # Adjust based on your RAM constraints
-df_iterator = pd.read_csv(csv_file, chunksize=chunk_size)
+df_iterator = pd.read_csv(csv_url, chunksize=chunk_size)
 
 # Load a smaller model for generating embeddings
 embedder = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
@@ -57,7 +58,7 @@ if input_text:
     # Gather the retrieved Ayahs with all columns
     retrieved_ayahs = []
     for idx in indices[0]:
-        for chunk in pd.read_csv(csv_file, chunksize=chunk_size):
+        for chunk in pd.read_csv(csv_url, chunksize=chunk_size):
             if idx < len(chunk):
                 retrieved_ayahs.append(chunk.iloc[idx])
                 break
@@ -95,3 +96,4 @@ if input_text:
 
 # Clear memory one last time
 clear_memory()
+

@@ -6,36 +6,31 @@ from sentence_transformers import SentenceTransformer
 from transformers import AutoModelForCausalLM, AutoTokenizer
 import torch
 import gc
+from accelerate import Accelerator
 
 # Function to clear memory
 def clear_memory():
     gc.collect()
     torch.cuda.empty_cache()
 
+# Path to the CSV file
+CSV_FILE_PATH = 'The Quran Dataset.csv'
+
 # Streamlit app
-st.title("📖 Quranic Knowledge AI Chatbot")
-
-st.write("""
-This app allows you to search for the most relevant Quranic Ayahs based on your query and generates an AI-based response. 
-Enter your query, and let the model find the most relevant verses for you.
-""")
-
-# Direct URL to the CSV file on GitHub
-csv_file_url = "https://raw.githubusercontent.com/reemamemon/Quranic_Insights/main/The_Quran_Dataset.csv"
+st.title("Quran Ayah Search and Response Generation")
 
 # Input for user query
-input_text = st.text_input("🔍 Enter your query:", value="What is the order about the believer?")
+input_text = st.text_input("Enter your query:", value="what is the order about the believer?")
 
-# Add a button to trigger the search and response generation
-if st.button("🚀 Generate Response"):
-    # Proceed if query is provided
+# Define a placeholder for the generated response
+generated_text_placeholder = st.empty()
+
+# Submit button
+if st.button('Submit'):
     if input_text:
-        # Inform user that the process has started
-        st.write("Processing your request...")
-
-        # Load the dataset in chunks from the GitHub URL
+        # Load the dataset in chunks
         chunk_size = 1000  # Adjust based on your RAM constraints
-        df_iterator = pd.read_csv(csv_file_url, chunksize=chunk_size)
+        df_iterator = pd.read_csv(CSV_FILE_PATH, chunksize=chunk_size)
 
         # Load a smaller model for generating embeddings
         embedder = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
@@ -58,11 +53,15 @@ if st.button("🚀 Generate Response"):
             # Clear memory
             clear_memory()
 
+        # Initialize Accelerator
+        accelerator = Accelerator()
+
         # Load the Granite model and tokenizer for generating the final response
-        device = "cuda" if torch.cuda.is_available() else "cpu"
+        device = accelerator.device
         model_path = "ibm-granite/granite-3b-code-instruct"
         tokenizer = AutoTokenizer.from_pretrained(model_path)
-        model = AutoModelForCausalLM.from_pretrained(model_path, device_map=device, torch_dtype=torch.float32)
+        model = AutoModelForCausalLM.from_pretrained(model_path, torch_dtype=torch.float32)
+        model = accelerator.prepare(model)  # Prepare the model with Accelerator
         model.eval()
 
         # Encode the input query using the smaller model
@@ -75,18 +74,18 @@ if st.button("🚀 Generate Response"):
         # Gather the retrieved Ayahs with all columns
         retrieved_ayahs = []
         for idx in indices[0]:
-            for chunk in pd.read_csv(csv_file_url, chunksize=chunk_size):
+            for chunk in pd.read_csv(CSV_FILE_PATH, chunksize=chunk_size):
                 if idx < len(chunk):
                     retrieved_ayahs.append(chunk.iloc[idx])
                     break
                 idx -= len(chunk)
 
-        # Display the results with all columns in a well-structured format
-        st.subheader("🔎 Retrieved Ayahs")
+        # Display the results with all columns
+        st.write("Retrieved Ayahs:")
         for i, ayah in enumerate(retrieved_ayahs, 1):
-            st.write(f"### Ayah {i}:")
+            st.write(f"\nAyah {i}:")
             for column, value in ayah.items():
-                st.write(f"**{column}:** {value}")
+                st.write(f"{column}: {value}")
 
         # Prepare the text for the language model
         retrieved_texts = "\n".join([ayah['ayah_en'] for ayah in retrieved_ayahs])
@@ -107,11 +106,9 @@ if st.button("🚀 Generate Response"):
         generated_text = tokenizer.decode(output[0], skip_special_tokens=True)
 
         # Display the generated response
-        st.subheader("🤖 AI Generated Response")
-        st.text_area("Generated Response", generated_text)
+        generated_text_placeholder.text_area("Generated Response", generated_text)
 
         # Clear memory one last time
         clear_memory()
-
     else:
-        st.error("Please enter a query.")
+        st.warning("Please enter a query.")

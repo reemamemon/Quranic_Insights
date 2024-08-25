@@ -16,7 +16,33 @@ def clear_memory():
 
 # Function to format and return the Quranic verse with reference
 def format_ayah_reference(ayah):
-    return f"**Arabic Ayah:** {ayah['ayah_ar']}\n**Translation:** {ayah['ayah_en']}\n**Para:** {ayah['para']}\n**Surah:** {ayah['surah']}\n**Ayah:** {ayah['ayah_number']}"
+    return (
+        f"**Arabic Reference from the Quran:**\n{ayah['ayah_ar']}\n\n"
+        f"**Translation and Explanation:**\n{ayah['ayah_en']}\n\n"
+        f"Para: {ayah['para']}, Surah: {ayah['surah']}, Ayah: {ayah['ayah_number']}"
+    )
+
+# Function to generate the response based on the model output
+def generate_response(input_text, retrieved_ayahs, model, tokenizer, device):
+    # Prepare the text for the language model
+    retrieved_texts = "\n".join(retrieved_ayahs['ayah_en'])
+    
+    # Generate the final response using the Granite model
+    input_tokens = tokenizer(retrieved_texts, return_tensors="pt", truncation=True, max_length=512)
+    for i in input_tokens:
+        input_tokens[i] = input_tokens[i].to(device)
+
+    with torch.no_grad():
+        output = model.generate(
+            **input_tokens,
+            max_length=512,
+            pad_token_id=tokenizer.pad_token_id,
+            num_beams=4,
+            no_repeat_ngram_size=3,
+        )
+    generated_text = tokenizer.decode(output[0], skip_special_tokens=True)
+    
+    return generated_text
 
 # Streamlit app
 st.title("Islamic AI Assistant: Quran Ayah Search and Response Generation")
@@ -82,23 +108,8 @@ if st.button("Generate"):
             st.write(f"\nAyah {i}:")
             st.write(format_ayah_reference(ayah))
 
-        # Prepare the text for the language model
-        retrieved_texts = "\n".join(retrieved_ayahs['ayah_en'])
-
-        # Generate the final response using the Granite model
-        input_tokens = tokenizer(retrieved_texts, return_tensors="pt", truncation=True, max_length=512)
-        for i in input_tokens:
-            input_tokens[i] = input_tokens[i].to(device)
-
-        with torch.no_grad():
-            output = model.generate(
-                **input_tokens,
-                max_length=512,
-                pad_token_id=tokenizer.pad_token_id,
-                num_beams=4,
-                no_repeat_ngram_size=3,
-            )
-        generated_text = tokenizer.decode(output[0], skip_special_tokens=True)
+        # Generate the response
+        generated_text = generate_response(input_text, retrieved_ayahs, model, tokenizer, device)
 
         # Display the generated response
         generated_text_placeholder.text_area("Generated Response", generated_text)
